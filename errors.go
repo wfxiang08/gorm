@@ -51,6 +51,7 @@ func (errs Errors) Add(newErrors ...error) Errors {
 }
 
 // Error format happened errors
+// 实现error接口
 func (errs Errors) Error() string {
 	var errors = []string{}
 	for _, e := range errs {

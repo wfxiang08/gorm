@@ -49,6 +49,9 @@ type RecordWithSlice struct {
 
 type ExampleStringSlice []string
 
+// 实现两个函数即可：
+// Value
+// Scan
 func (l ExampleStringSlice) Value() (driver.Value, error) {
 	bytes, err := json.Marshal(l)
 	return string(bytes), err

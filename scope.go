@@ -70,6 +70,7 @@ func (scope *Scope) Dialect() Dialect {
 // Quote used to quote string to escape them for database
 func (scope *Scope) Quote(str string) string {
 	if strings.Index(str, ".") != -1 {
+		// 例如: mydb.mytable --> `mydb`.`mytable`
 		newStrs := []string{}
 		for _, str := range strings.Split(str, ".") {
 			newStrs = append(newStrs, scope.Dialect().Quote(str))
@@ -112,6 +113,7 @@ func (scope *Scope) Fields() []*Field {
 			isStruct           = indirectScopeValue.Kind() == reflect.Struct
 		)
 
+		// 从当前的Model获取Fields
 		for _, structField := range scope.GetModelStruct().StructFields {
 			if isStruct {
 				fieldValue := indirectScopeValue
@@ -136,10 +138,15 @@ func (scope *Scope) FieldByName(name string) (field *Field, ok bool) {
 		mostMatchedField *Field
 	)
 
+	// 如何通过name定位Field?
+	// 同时支持: FieldName, field_name两种模式
+	//
 	for _, field := range scope.Fields() {
 		if field.Name == name || field.DBName == name {
 			return field, true
 		}
+
+		// ??
 		if field.DBName == dbName {
 			mostMatchedField = field
 		}
@@ -158,6 +165,9 @@ func (scope *Scope) PrimaryFields() (fields []*Field) {
 }
 
 // PrimaryField return scope's main primary field, if defined more that one primary fields, will return the one having column name `id` or the first one
+// 如果是联合索引，该如何处理呢?
+// 警告: 如果是联合索引，下面的各种判断可能不准确
+//
 func (scope *Scope) PrimaryField() *Field {
 	if primaryFields := scope.GetModelStruct().PrimaryFields; len(primaryFields) > 0 {
 		if len(primaryFields) > 1 {
@@ -204,6 +214,7 @@ func (scope *Scope) HasColumn(column string) bool {
 
 // SetColumn to set the column's value, column could be field or field's name/dbname
 func (scope *Scope) SetColumn(column interface{}, value interface{}) error {
+	// 修改: columm 对应的field, 并且可能触发 update_attrs
 	var updateAttrs = map[string]interface{}{}
 	if attrs, ok := scope.InstanceGet("gorm:update_attrs"); ok {
 		updateAttrs = attrs.(map[string]interface{})

@@ -69,6 +69,7 @@ const (
 
 // ToDBName convert string to db name
 func ToDBName(name string) string {
+	// TableName --> table_name 之类的转换
 	if v := smap.Get(name); v != "" {
 		return v
 	}
@@ -83,13 +84,21 @@ func ToDBName(name string) string {
 		lastCase, currCase, nextCase strCase
 	)
 
+	// 如何处理？ TableName --> table_name 之类的转换
 	for i, v := range value[:len(value)-1] {
 		nextCase = strCase(value[i+1] >= 'A' && value[i+1] <= 'Z')
+
 		if i > 0 {
 			if currCase == upper {
 				if lastCase == upper && nextCase == upper {
+					// ABC --> B不变
 					buf.WriteRune(v)
 				} else {
+					// aBC --> a_BC
+					// ABc --> a_Bc
+					// aBc --> a_Bc
+					// _BC --> _BC
+					// aB_ --> aB_
 					if value[i-1] != '_' && value[i+1] != '_' {
 						buf.WriteRune('_')
 					}
@@ -102,6 +111,8 @@ func ToDBName(name string) string {
 				}
 			}
 		} else {
+			// 默认第一个case为大写
+			// 遍历Rune
 			currCase = upper
 			buf.WriteRune(v)
 		}
@@ -109,8 +120,10 @@ func ToDBName(name string) string {
 		currCase = nextCase
 	}
 
+	// 处理最后一个字符
 	buf.WriteByte(value[len(value)-1])
 
+	// 统一处理大小写?
 	s := strings.ToLower(buf.String())
 	smap.Set(name, s)
 	return s
@@ -184,6 +197,8 @@ func fileWithLineNum() string {
 	return ""
 }
 
+// 如何判断是否为空值?
+//
 func isBlank(value reflect.Value) bool {
 	switch value.Kind() {
 	case reflect.String:
@@ -200,6 +215,7 @@ func isBlank(value reflect.Value) bool {
 		return value.IsNil()
 	}
 
+	// 其他对象，如何判断是否为空
 	return reflect.DeepEqual(value.Interface(), reflect.Zero(value.Type()).Interface())
 }
 

@@ -95,7 +95,9 @@ func createCallback(scope *Scope) {
 
 		lastInsertIDReturningSuffix := scope.Dialect().LastInsertIDReturningSuffix(quotedTableName, returningColumn)
 
+		// 生成SQL
 		if len(columns) == 0 {
+			// 全部都使用默认值
 			scope.Raw(fmt.Sprintf(
 				"INSERT INTO %v DEFAULT VALUES%v%v",
 				quotedTableName,
@@ -113,13 +115,17 @@ func createCallback(scope *Scope) {
 			))
 		}
 
+		// 执行SQL
 		// execute create sql
 		if lastInsertIDReturningSuffix == "" || primaryField == nil {
 			if result, err := scope.SQLDB().Exec(scope.SQL, scope.SQLVars...); scope.Err(err) == nil {
+
 				// set rows affected count
 				scope.db.RowsAffected, _ = result.RowsAffected()
 
 				// set primary value to primary field
+				// 非自增字段，则不能条用LastInsertId
+				//
 				if primaryField != nil && primaryField.IsBlank {
 					if primaryValue, err := result.LastInsertId(); scope.Err(err) == nil {
 						scope.Err(primaryField.Set(primaryValue))

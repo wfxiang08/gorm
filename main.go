@@ -18,13 +18,15 @@ type DB struct {
 	// single db
 	db                SQLCommon
 	blockGlobalUpdate bool
-	logMode           int
+	logMode           int // 2 打印各种debug log
 	logger            logger
 	search            *search
+
+	// DB保留着一些全局的信息，例如: 事务等等
 	values            map[string]interface{}
 
 	// global db
-	parent        *DB
+	parent        *DB // 全局的DB, 各种基本的设置都是基于parent来设置的
 	callbacks     *Callback
 	dialect       Dialect
 	singularTable bool
@@ -49,6 +51,9 @@ func Open(dialect string, args ...interface{}) (db *DB, err error) {
 	var source string
 	var dbSQL SQLCommon
 
+	// 如何处理通用类型的参数呢?
+	// 这个写法挺有意思的?
+	// case 识别其type, value保持其内容
 	switch value := args[0].(type) {
 	case string:
 		var driver = dialect
@@ -70,12 +75,16 @@ func Open(dialect string, args ...interface{}) (db *DB, err error) {
 		callbacks: DefaultCallback,
 		dialect:   newDialect(dialect, dbSQL),
 	}
+
+	// parent的作用是什么呢?
 	db.parent = db
+
 	if err != nil {
 		return
 	}
 	// Send a ping to make sure the database connection is alive.
 	if d, ok := dbSQL.(*sql.DB); ok {
+		// Open时会进行ping, 检查连接有效性
 		if err = d.Ping(); err != nil {
 			d.Close()
 		}
@@ -97,6 +106,7 @@ type closer interface {
 
 // Close close current db connection.  If database connection is not an io.Closer, returns an error.
 func (s *DB) Close() error {
+	// 必须实现closer接口
 	if db, ok := s.parent.db.(closer); ok {
 		return db.Close()
 	}
@@ -106,6 +116,7 @@ func (s *DB) Close() error {
 // DB get `*sql.DB` from current connection
 // If the underlying database connection is not a *sql.DB, returns nil
 func (s *DB) DB() *sql.DB {
+	// 获取golang与原声的sql.DB
 	db, _ := s.db.(*sql.DB)
 	return db
 }
@@ -359,10 +370,15 @@ func (s *DB) FirstOrInit(out interface{}, where ...interface{}) *DB {
 // https://jinzhu.github.io/gorm/crud.html#firstorcreate
 func (s *DB) FirstOrCreate(out interface{}, where ...interface{}) *DB {
 	c := s.clone()
+
+	// 查找满足条件的一个元素
+	// 如何判断是否找到没有?
 	if result := s.First(out, where...); result.Error != nil {
 		if !result.RecordNotFound() {
 			return result
 		}
+
+		// 如何创建呢?
 		return c.NewScope(out).inlineCondition(where...).initialize().callCallbacks(c.parent.callbacks.creates).db
 	} else if len(c.search.assignAttrs) > 0 {
 		return c.NewScope(out).InstanceSet("gorm:update_interface", c.search.assignAttrs).callCallbacks(c.parent.callbacks.updates).db
@@ -713,7 +729,7 @@ func (s *DB) GetErrors() []error {
 func (s *DB) clone() *DB {
 	db := &DB{
 		db:                s.db,
-		parent:            s.parent,
+		parent:            s.parent, // 复用Connection
 		logger:            s.logger,
 		logMode:           s.logMode,
 		values:            map[string]interface{}{},
@@ -722,6 +738,7 @@ func (s *DB) clone() *DB {
 		blockGlobalUpdate: s.blockGlobalUpdate,
 	}
 
+	// value 拷贝
 	for key, value := range s.values {
 		db.values[key] = value
 	}

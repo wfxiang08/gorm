@@ -32,6 +32,7 @@ func (field *Field) Set(value interface{}) (err error) {
 	fieldValue := field.Field
 	if reflectValue.IsValid() {
 		if reflectValue.Type().ConvertibleTo(fieldValue.Type()) {
+			// 如果类型兼容，则默认转
 			fieldValue.Set(reflectValue.Convert(fieldValue.Type()))
 		} else {
 			if fieldValue.Kind() == reflect.Ptr {
@@ -50,6 +51,7 @@ func (field *Field) Set(value interface{}) (err error) {
 			}
 		}
 	} else {
+		// 如果无效，则设置为默认的Zero
 		field.Field.Set(reflect.Zero(field.Field.Type()))
 	}
 

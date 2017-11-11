@@ -14,6 +14,7 @@ import (
 
 // DefaultTableNameHandler default table name handler
 var DefaultTableNameHandler = func(db *DB, defaultTableName string) string {
+	// 默认不处理TableName
 	return defaultTableName
 }
 
@@ -38,6 +39,7 @@ func newModelStructsMap() *safeModelStructsMap {
 	return &safeModelStructsMap{l: new(sync.RWMutex), m: make(map[reflect.Type]*ModelStruct)}
 }
 
+// 默认的model struct
 var modelStructsMap = newModelStructsMap()
 
 // ModelStruct model definition
@@ -50,12 +52,17 @@ type ModelStruct struct {
 
 // TableName get model's table name
 func (s *ModelStruct) TableName(db *DB) string {
+
 	if s.defaultTableName == "" && db != nil && s.ModelType != nil {
 		// Set default table name
+		// 是否定义了自己的TableName()函数？
 		if tabler, ok := reflect.New(s.ModelType).Interface().(tabler); ok {
+
 			s.defaultTableName = tabler.TableName()
 		} else {
+			// 如何获取type的名字
 			tableName := ToDBName(s.ModelType.Name())
+			// 默认的TableName是否支持单复数呢?
 			if db == nil || !db.parent.singularTable {
 				tableName = inflection.Plural(tableName)
 			}
@@ -63,6 +70,7 @@ func (s *ModelStruct) TableName(db *DB) string {
 		}
 	}
 
+	// 是否有额外的处理呢?
 	return DefaultTableNameHandler(db, s.defaultTableName)
 }
 
@@ -133,6 +141,10 @@ func getForeignField(column string, fields []*StructField) *StructField {
 	return nil
 }
 
+//
+// 将方法定义不到不同的文件中:
+// 能否跨越不同的package呢?
+//
 // GetModelStruct get value's model struct, relationships based on struct and tag definition
 func (scope *Scope) GetModelStruct() *ModelStruct {
 	var modelStruct ModelStruct
@@ -161,12 +173,13 @@ func (scope *Scope) GetModelStruct() *ModelStruct {
 	// Get all fields
 	for i := 0; i < reflectType.NumField(); i++ {
 		if fieldStruct := reflectType.Field(i); ast.IsExported(fieldStruct.Name) {
+			// 首先field必须是公开的
 			field := &StructField{
 				Struct:      fieldStruct,
 				Name:        fieldStruct.Name,
 				Names:       []string{fieldStruct.Name},
 				Tag:         fieldStruct.Tag,
-				TagSettings: parseTagSetting(fieldStruct.Tag),
+				TagSettings: parseTagSetting(fieldStruct.Tag), // TagSettings如何处理呢?
 			}
 
 			// is ignored field
@@ -192,6 +205,8 @@ func (scope *Scope) GetModelStruct() *ModelStruct {
 				}
 
 				fieldValue := reflect.New(indirectType).Interface()
+
+				// Field要么是基础类型，要么实现了: Scanner接口
 				if _, isScanner := fieldValue.(sql.Scanner); isScanner {
 					// is scanner
 					field.IsScanner, field.IsNormal = true, true
@@ -237,6 +252,7 @@ func (scope *Scope) GetModelStruct() *ModelStruct {
 					continue
 				} else {
 					// build relationships
+					// 可以不考虑relationship, 认为大家都是普通的表
 					switch indirectType.Kind() {
 					case reflect.Slice:
 						defer func(field *StructField) {
@@ -581,13 +597,15 @@ func (scope *Scope) GetStructFields() (fields []*StructField) {
 
 func parseTagSetting(tags reflect.StructTag) map[string]string {
 	setting := map[string]string{}
+	// 读取两个tags: sql, gorm
 	for _, str := range []string{tags.Get("sql"), tags.Get("gorm")} {
+		// 通过;来分割多个不同的tag约束
 		tags := strings.Split(str, ";")
 		for _, value := range tags {
 			v := strings.Split(value, ":")
 			k := strings.TrimSpace(strings.ToUpper(v[0]))
 			if len(v) >= 2 {
-				setting[k] = strings.Join(v[1:], ":")
+				setting[k] = strings.Join(v[1:], ":") // 例如: size:255
 			} else {
 				setting[k] = k
 			}
