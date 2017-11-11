@@ -175,6 +175,8 @@ func (s *DB) SingularTable(enable bool) {
 // NewScope create a scope for current operation
 func (s *DB) NewScope(value interface{}) *Scope {
 	dbClone := s.clone()
+
+	// Value就是需要被修改的，返回的数据
 	dbClone.Value = value
 	return &Scope{db: dbClone, Search: dbClone.search.clone(), Value: value}
 }
@@ -301,6 +303,7 @@ func (s *DB) Last(out interface{}, where ...interface{}) *DB {
 
 // Find find records that match given conditions
 func (s *DB) Find(out interface{}, where ...interface{}) *DB {
+	// out一般都是指针，所以可以随便传递
 	return s.clone().NewScope(out).inlineCondition(where...).callCallbacks(s.parent.callbacks.queries).db
 }
 
@@ -465,6 +468,7 @@ func (s *DB) Model(value interface{}) *DB {
 
 // Table specify the table you would like to run db operations
 func (s *DB) Table(name string) *DB {
+	// 每次一操作都会创建一个DB
 	clone := s.clone()
 	clone.search.Table(name)
 	clone.Value = nil

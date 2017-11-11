@@ -482,6 +482,7 @@ func (scope *Scope) quoteIfPossible(str string) string {
 	return str
 }
 
+// 如何将rows的数据解析到fileds上呢?
 func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 	var (
 		ignored            interface{}
@@ -491,6 +492,7 @@ func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 		resetFields        = map[int]*Field{}
 	)
 
+	// 遍历来自数据库的column
 	for index, column := range columns {
 		values[index] = &ignored
 
@@ -519,9 +521,11 @@ func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 		}
 	}
 
+	// values应该是一个指针数组，或者interface数组
 	scope.Err(rows.Scan(values...))
 
 	for index, field := range resetFields {
+		// 从values拷贝到field?
 		if v := reflect.ValueOf(values[index]).Elem().Elem(); v.IsValid() {
 			field.Field.Set(v)
 		}
