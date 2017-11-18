@@ -497,7 +497,6 @@ func printFields(fields []*Field) string {
 	return strings.Join(results, ", ")
 }
 
-
 func printFields1(fields []*Field) string {
 	var results []string
 	for _, field := range fields {
@@ -515,6 +514,18 @@ func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 		selectedColumnsMap = map[string]int{}
 		resetFields        = map[int]*Field{}
 	)
+
+	// Scan是如何工作的呢?
+	// 正常的写法?
+	//	values := make([]interface{}, size)
+	//	// rows.Scan wants '[]interface{}' as an argument, so we must copy the
+	//	// references into such a slice
+	//	// See http://code.google.com/p/go-wiki/wiki/InterfaceSlice for details
+	//	scanArgs := make([]interface{}, len(values))
+	//	for i := range values {
+	//		scanArgs[i] = &values[i]
+	//	}
+	//	err = rows.Scan(scanArgs...)
 
 	log.Printf("Fields: %s", printFields1(fields))
 
@@ -542,6 +553,7 @@ func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 					log.Printf("B3")
 				} else {
 					// 构建ptr
+					// scanArgs[i] = &values[i]
 					reflectValue := reflect.New(reflect.PtrTo(field.Struct.Type))
 					reflectValue.Elem().Set(field.Field.Addr())
 					values[index] = reflectValue.Interface()
@@ -566,6 +578,7 @@ func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 
 	for index, field := range resetFields {
 		// 从values拷贝到field?
+		// 不太明白....
 		if v := reflect.ValueOf(values[index]).Elem().Elem(); v.IsValid() {
 			field.Field.Set(v)
 		}
