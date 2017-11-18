@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	log "github.com/wfxiang08/cyutils/utils/rolling_log"
 )
 
 // Define callbacks for querying
@@ -29,6 +30,7 @@ func queryCallback(scope *Scope) {
 		}
 	}
 
+	// 也可以通过其他方式设置 results的目标
 	if value, ok := scope.Get("gorm:query_destination"); ok {
 		results = indirect(reflect.ValueOf(value))
 	}
@@ -75,6 +77,8 @@ func queryCallback(scope *Scope) {
 					elem = reflect.New(resultType).Elem()
 				}
 
+				log.Printf("Begin scope scan")
+				// 一次scan一行数据
 				scope.scan(rows, columns, scope.New(elem.Addr().Interface()).Fields())
 
 				if isSlice {

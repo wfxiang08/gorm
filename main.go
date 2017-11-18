@@ -61,7 +61,7 @@ func Open(dialect string, args ...interface{}) (db *DB, err error) {
 			source = value
 		} else if len(args) >= 2 {
 			driver = value
-			source = args[1].(string)
+			source = args[1].(string) // 如果确保不会出错，则可以直接忽略， source, ok := args[1].(string)中的ok
 		}
 		dbSQL, err = sql.Open(driver, source)
 	case SQLCommon:

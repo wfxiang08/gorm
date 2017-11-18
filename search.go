@@ -37,6 +37,7 @@ func (s *search) clone() *search {
 }
 
 func (s *search) Where(query interface{}, values ...interface{}) *search {
+	// 添加一组筛选条件
 	s.whereConditions = append(s.whereConditions, map[string]interface{}{"query": query, "args": values})
 	return s
 }
@@ -140,6 +141,7 @@ func (s *search) Table(name string) *search {
 
 func (s *search) getInterfaceAsSQL(value interface{}) (str string) {
 	switch value.(type) {
+	// 只处理常用类型?
 	case string, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		str = fmt.Sprintf("%v", value)
 	default:

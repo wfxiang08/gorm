@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"reflect"
+	log "github.com/wfxiang08/cyutils/utils/rolling_log"
 )
 
 // Scope contain current operation's information when you perform any operation on the database
@@ -29,6 +30,12 @@ type Scope struct {
 
 // IndirectValue return scope's reflect value's indirect value
 func (scope *Scope) IndirectValue() reflect.Value {
+	// 如何理解scope.Value呢?
+	// 一般:
+	//    interface{} --> interface{}
+	//    &x ---> interface{}
+	//    很少有无聊到&&x --> interface{}之类的变化
+	//
 	return indirect(reflect.ValueOf(scope.Value))
 }
 
@@ -482,6 +489,23 @@ func (scope *Scope) quoteIfPossible(str string) string {
 	return str
 }
 
+func printFields(fields []*Field) string {
+	var results []string
+	for _, field := range fields {
+		results = append(results, field.Name)
+	}
+	return strings.Join(results, ", ")
+}
+
+
+func printFields1(fields []*Field) string {
+	var results []string
+	for _, field := range fields {
+		results = append(results, fmt.Sprintf("%s %d", field.Name, field.Field.Kind()))
+	}
+	return strings.Join(results, ", ")
+}
+
 // 如何将rows的数据解析到fileds上呢?
 func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 	var (
@@ -492,11 +516,16 @@ func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 		resetFields        = map[int]*Field{}
 	)
 
-	// 遍历来自数据库的column
+	log.Printf("Fields: %s", printFields1(fields))
+
+	// 遍历来自数据库的column --> fields中呢?
 	for index, column := range columns {
-		values[index] = &ignored
+		values[index] = &ignored // 默认直接ignore
 
 		selectFields = fields
+
+		// 什么意思?
+		// 	一个column可以出现多次？每次出现可以和一个不同的field绑定
 		if idx, ok := selectedColumnsMap[column]; ok {
 			selectFields = selectFields[idx+1:]
 		}
@@ -505,11 +534,15 @@ func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 			if field.DBName == column {
 				if field.Field.Kind() == reflect.Ptr {
 					values[index] = field.Field.Addr().Interface()
+					log.Printf("B3")
 				} else {
+					// 构建ptr
 					reflectValue := reflect.New(reflect.PtrTo(field.Struct.Type))
 					reflectValue.Elem().Set(field.Field.Addr())
 					values[index] = reflectValue.Interface()
 					resetFields[index] = field
+
+					log.Printf("B4")
 				}
 
 				selectedColumnsMap[column] = fieldIndex

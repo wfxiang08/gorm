@@ -32,7 +32,8 @@ func beforeCreateCallback(scope *Scope) {
 func updateTimeStampForCreateCallback(scope *Scope) {
 	if !scope.HasError() {
 		now := NowFunc()
-
+		// 在业务层更新time字段
+		// 通过IsBlank来调整
 		if createdAtField, ok := scope.FieldByName("CreatedAt"); ok {
 			if createdAtField.IsBlank {
 				createdAtField.Set(now)

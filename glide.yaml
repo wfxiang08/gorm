@@ -1,0 +1,13 @@
+package: github.com/jinzhu/gorm
+import:
+- package: github.com/denisenkom/go-mssqldb
+- package: github.com/go-sql-driver/mysql
+- package: github.com/jinzhu/inflection
+- package: github.com/lib/pq
+  subpackages:
+  - hstore
+- package: github.com/mattn/go-sqlite3
+- package: github.com/wfxiang08/cyutils
+testImport:
+- package: github.com/erikstmartin/go-testdb
+- package: github.com/jinzhu/now

@@ -24,6 +24,7 @@ func (field *Field) Set(value interface{}) (err error) {
 		return ErrUnaddressable
 	}
 
+	// 确保: value为reflect.Value格式
 	reflectValue, ok := value.(reflect.Value)
 	if !ok {
 		reflectValue = reflect.ValueOf(value)
@@ -35,16 +36,19 @@ func (field *Field) Set(value interface{}) (err error) {
 			// 如果类型兼容，则默认转
 			fieldValue.Set(reflectValue.Convert(fieldValue.Type()))
 		} else {
+			// 如果是指针，创建一个Element
 			if fieldValue.Kind() == reflect.Ptr {
 				if fieldValue.IsNil() {
 					fieldValue.Set(reflect.New(field.Struct.Type.Elem()))
 				}
+				// 然后fieldValue切换到Elem
 				fieldValue = fieldValue.Elem()
 			}
 
 			if reflectValue.Type().ConvertibleTo(fieldValue.Type()) {
 				fieldValue.Set(reflectValue.Convert(fieldValue.Type()))
 			} else if scanner, ok := fieldValue.Addr().Interface().(sql.Scanner); ok {
+				// fieldValue来主动解析 interface{}
 				err = scanner.Scan(reflectValue.Interface())
 			} else {
 				err = fmt.Errorf("could not convert argument of field %s from %s to %s", field.Name, reflectValue.Type(), fieldValue.Type())

@@ -18,6 +18,7 @@ import (
 //    gorm.NowFunc = func() time.Time {
 //      return time.Now().UTC()
 //    }
+// 抽取出来，可以在测试时控制
 var NowFunc = func() time.Time {
 	return time.Now()
 }
@@ -32,8 +33,11 @@ var goTestRegexp = regexp.MustCompile(`jinzhu/gorm/.*test.go`)
 func init() {
 	var commonInitialismsForReplacer []string
 	for _, initialism := range commonInitialisms {
+		// Title() 字首大写
 		commonInitialismsForReplacer = append(commonInitialismsForReplacer, initialism, strings.Title(strings.ToLower(initialism)))
 	}
+
+	// 如何做字符串替换呢?
 	commonInitialismsReplacer = strings.NewReplacer(commonInitialismsForReplacer...)
 }
 
@@ -70,6 +74,7 @@ const (
 // ToDBName convert string to db name
 func ToDBName(name string) string {
 	// TableName --> table_name 之类的转换
+	// 缓存结果
 	if v := smap.Get(name); v != "" {
 		return v
 	}
@@ -189,6 +194,7 @@ func toQueryValues(values [][]interface{}) (results []interface{}) {
 
 func fileWithLineNum() string {
 	for i := 2; i < 15; i++ {
+		// 如何获取call的信息，打印调用栈
 		_, file, line, ok := runtime.Caller(i)
 		if ok && (!goSrcRegexp.MatchString(file) || goTestRegexp.MatchString(file)) {
 			return fmt.Sprintf("%v:%v", file, line)
@@ -255,6 +261,7 @@ func toString(str interface{}) string {
 	return ""
 }
 
+// 如何通过反射创建一个slice呢?
 func makeSlice(elemType reflect.Type) interface{} {
 	if elemType.Kind() == reflect.Slice {
 		elemType = elemType.Elem()

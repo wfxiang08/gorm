@@ -1,0 +1,31 @@
+hash: 43f6432ffd67aef65b3ff0b92894f1570b7f582772691f5f856a1450008e8203
+updated: 2017-11-18T13:31:26.469030211+08:00
+imports:
+- name: github.com/denisenkom/go-mssqldb
+  version: 88555645b640cc621e32f8693d7586a1aa1575f4
+- name: github.com/go-sql-driver/mysql
+  version: 3654d25ec346ee8ce71a68431025458d52a38ac0
+- name: github.com/jinzhu/inflection
+  version: 1c35d901db3da928c72a72d8458480cc9ade058f
+- name: github.com/lib/pq
+  version: 8c6ee72f3e6bcb1542298dd5f76cb74af9742cec
+  subpackages:
+  - hstore
+  - oid
+- name: github.com/mattn/go-sqlite3
+  version: 47157b55f33fde3bf09c73d8bd2e60da14fd6e3b
+- name: github.com/wfxiang08/cyutils
+  version: a1e100462898931f081803bb601b083ce9cee60b
+- name: golang.org/x/crypto
+  version: 81e90905daefcd6fd217b62423c0908922eadb30
+  subpackages:
+  - md4
+- name: golang.org/x/net
+  version: 6acef71eb69611914f7a30939ea9f6e194c78172
+  subpackages:
+  - context
+testImports:
+- name: github.com/erikstmartin/go-testdb
+  version: 8d10e4a1bae52cd8b81ffdec3445890d6dccab3d
+- name: github.com/jinzhu/now
+  version: d939ba741945c047cac69c329c5fb0d6b4a06520
