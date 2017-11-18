@@ -526,6 +526,11 @@ func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 
 		// 什么意思?
 		// 	一个column可以出现多次？每次出现可以和一个不同的field绑定
+		// 例如: select user_id, user_id from user_song where song_id=1000;
+		//      第一个user_id --> field1
+		//      第二个user_id --> field2
+		//      风险: 如果struct中多个field对应同一个db的字段呢? 似乎有问题，不过一般情况下也也不会这样
+		//
 		if idx, ok := selectedColumnsMap[column]; ok {
 			selectFields = selectFields[idx+1:]
 		}
@@ -540,6 +545,8 @@ func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 					reflectValue := reflect.New(reflect.PtrTo(field.Struct.Type))
 					reflectValue.Elem().Set(field.Field.Addr())
 					values[index] = reflectValue.Interface()
+
+					// 最终field改为直接传递value？
 					resetFields[index] = field
 
 					log.Printf("B4")
